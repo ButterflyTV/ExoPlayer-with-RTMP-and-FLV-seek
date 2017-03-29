@@ -1,4 +1,4 @@
-// Copyright (C) 2014 The Android Open Source Project
+// Copyright (C) 2016 The Android Open Source Project
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,26 +14,40 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 23
-    buildToolsVersion "23.0.1"
+    compileSdkVersion project.ext.compileSdkVersion
+    buildToolsVersion project.ext.buildToolsVersion
 
     defaultConfig {
         minSdkVersion 16
-        targetSdkVersion 23
+        targetSdkVersion project.ext.targetSdkVersion
     }
+
     buildTypes {
         release {
-            minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.txt'
+            shrinkResources true
+            minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android.txt')
+        }
+        debug {
+            jniDebuggable = true
         }
     }
 
     lintOptions {
-        abortOnError false
+        // The demo app does not have translations.
+        disable 'MissingTranslation'
+    }
+
+    productFlavors {
+        noExtensions
+        withExtensions
     }
 }
 
 dependencies {
     compile project(':library')
-    compile 'net.butterflytv.utils:rtmp-client:0.2.3'
+    withExtensionsCompile project(path: ':extension-ffmpeg')
+    withExtensionsCompile project(path: ':extension-flac')
+    withExtensionsCompile project(path: ':extension-opus')
+    withExtensionsCompile project(path: ':extension-vp9')
 }

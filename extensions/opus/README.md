@@ -2,11 +2,11 @@
 
 ## Description ##
 
-The Opus Extension is a [TrackRenderer][] implementation that helps you bundle
+The Opus Extension is a [Renderer][] implementation that helps you bundle
 libopus (the Opus decoding library) into your app and use it along with
 ExoPlayer to play Opus audio on Android devices.
 
-[TrackRenderer]: https://google.github.io/ExoPlayer/doc/reference/com/google/android/exoplayer/TrackRenderer.html
+[Renderer]: https://google.github.io/ExoPlayer/doc/reference/com/google/android/exoplayer2/Renderer.html
 
 ## Build Instructions ##
 
@@ -26,6 +26,8 @@ OPUS_EXT_PATH="${EXOPLAYER_ROOT}/extensions/opus/src/main"
 
 * Download the [Android NDK][] and set its location in an environment variable:
 
+[Android NDK]: https://developer.android.com/tools/sdk/ndk/index.html
+
 ```
 NDK_PATH="<path to Android NDK>"
 ```
@@ -34,7 +36,7 @@ NDK_PATH="<path to Android NDK>"
 
 ```
 cd "${OPUS_EXT_PATH}/jni" && \
-git clone git://git.opus-codec.org/opus.git libopus
+git clone https://git.xiph.org/opus.git libopus
 ```
 
 * Run the script to convert arm assembly to NDK compatible format:

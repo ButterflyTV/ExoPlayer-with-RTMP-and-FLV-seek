@@ -1,19 +1,4 @@
-# ExoPlayer Readme #
-
-### Exoplayer is extended
-It can play rtmp streams and can seek on flv files If keyframes exists as metatag
-
-To test RTMP: You need to use RTMPDataSource class as DataSource. If you want to play live videos via rtmp
-add " live=1" at the end of the url. If i have some time, i gonna make librtmp library as aar file and put it in a repo.
-
-This project is developed for Butterfly TV <a href="http://www.butterflytv.net/"><img src="http://www.butterflytv.net/wp-content/uploads/2014/08/icon-butterflyTV-150x150.png" width="30"></a>
-
-<a href="https://play.google.com/store/apps/details?id=com.butterfly">
-  <img alt="Get it on Google Play" width="200px" src="https://play.google.com/intl/en_us/badges/images/generic/en-play-badge.png">
-</a>
-
-
-## Description ##
+# ExoPlayer #
 
 ExoPlayer is an application level media player for Android. It provides an
 alternative to Android’s MediaPlayer API for playing audio and video both
@@ -21,12 +6,6 @@ locally and over the Internet. ExoPlayer supports features not currently
 supported by Android’s MediaPlayer API, including DASH and SmoothStreaming
 adaptive playbacks. Unlike the MediaPlayer API, ExoPlayer is easy to customize
 and extend, and can be updated through Play Store application updates.
-
-## News ##
-
-Read news, hints and tips on the [news][] page.
-
-[news]: https://google.github.io/ExoPlayer/news.html
 
 ## Documentation ##
 
@@ -37,14 +16,21 @@ Read news, hints and tips on the [news][] page.
 
 [developer guide]: https://google.github.io/ExoPlayer/guide.html
 [class reference]: https://google.github.io/ExoPlayer/doc/reference
-[release notes]: https://github.com/google/ExoPlayer/blob/dev/RELEASENOTES.md
+[release notes]: https://github.com/google/ExoPlayer/blob/dev-v2/RELEASENOTES.md
 
 ## Using ExoPlayer ##
 
-#### Via jCenter ####
+The easiest way to get started using ExoPlayer is to add it as a gradle
+dependency. You need to make sure you have the jcenter repository included in
+the `build.gradle` file in the root of your project:
 
-The easiest way to get started using ExoPlayer is by including the following in
-your project's `build.gradle` file:
+```gradle
+repositories {
+    jcenter()
+}
+```
+
+Next, include the following in your module's `build.gradle` file:
 
 ```gradle
 compile 'com.google.android.exoplayer:exoplayer:rX.X.X'
@@ -56,41 +42,19 @@ project's [Releases][]. For more details, see the project on [Bintray][].
 [Releases]: https://github.com/google/ExoPlayer/releases
 [Bintray]: https://bintray.com/google/exoplayer/exoplayer/view
 
-#### As source ####
-
-ExoPlayer can also be built from source using Gradle. You can include it as a
-dependent project like so:
-
-```gradle
-// settings.gradle
-include ':app', ':..:ExoPlayer:library'
-
-// app/build.gradle
-dependencies {
-    compile project(':..:ExoPlayer:library')
-}
-```
-
-#### As a jar ####
-
-If you want to use ExoPlayer as a jar, run:
-
-```sh
-./gradlew jarRelease
-```
-
-and copy `library.jar` to the libs folder of your new project.
-
 ## Developing ExoPlayer ##
 
 #### Project branches ####
 
-  * The [`master`][master] branch holds the most recent minor release.
-  * Most development work happens on the [`dev`][dev] branch.
-  * Additional development branches may be established for major features.
-
-[master]: https://github.com/google/ExoPlayer/tree/master
-[dev]: https://github.com/google/ExoPlayer/tree/dev
+  * The project has `dev-vX` and `release-vX` branches, where `X` is the major
+    version number.
+  * Most development work happens on the `dev-vX` branch with the highest major
+    version number. Pull requests should normally be made to this branch.
+  * Bug fixes may be submitted to older `dev-vX` branches. When doing this, the
+    same (or an equivalent) fix should also be submitted to all subsequent
+    `dev-vX` branches.
+  * A `release-vX` branch holds the most recent stable release for major version
+    `X`.
 
 #### Using Android Studio ####
 

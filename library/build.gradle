@@ -1,4 +1,4 @@
-// Copyright (C) 2014 The Android Open Source Project
+// Copyright (C) 2016 The Android Open Source Project
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,36 +11,37 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+import com.android.builder.core.BuilderConstants
+
 apply plugin: 'com.android.library'
-apply plugin: 'bintray-release'
 
 android {
-    compileSdkVersion 23
-    buildToolsVersion "23.0.1"
+    compileSdkVersion project.ext.compileSdkVersion
+    buildToolsVersion project.ext.buildToolsVersion
 
     defaultConfig {
-        // Important: ExoPlayerLib specifies a minSdkVersion of 9 because
-        // various components provided by the library may be of use on older
-        // devices. However, please note that the core video playback
-        // functionality provided by the library requires API level 16 or
-        // greater.
-        minSdkVersion 9
-        targetSdkVersion 23
+        minSdkVersion project.ext.minSdkVersion
+        targetSdkVersion project.ext.targetSdkVersion
+        consumerProguardFiles 'proguard-rules.txt'
     }
 
     buildTypes {
-        release {
-            minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.txt'
-        }
+        // Re-enable test coverage when the following issue is fixed:
+        // https://code.google.com/p/android/issues/detail?id=226070
+        // debug {
+        //     testCoverageEnabled = true
+        // }
     }
 
-    lintOptions {
-        abortOnError false
+    sourceSets {
+        androidTest {
+            java.srcDirs += "../testutils/src/main/java/"
+        }
     }
 }
 
 dependencies {
+    compile 'com.android.support:support-annotations:25.2.0'
     androidTestCompile 'com.google.dexmaker:dexmaker:1.2'
     androidTestCompile 'com.google.dexmaker:dexmaker-mockito:1.2'
     androidTestCompile 'org.mockito:mockito-core:1.9.5'
@@ -48,7 +49,7 @@ dependencies {
 
 android.libraryVariants.all { variant ->
     def name = variant.buildType.name
-    if (name.equals(com.android.builder.core.BuilderConstants.DEBUG)) {
+    if (name.equals(BuilderConstants.DEBUG)) {
         return; // Skip debug builds.
     }
     def task = project.tasks.create "jar${name.capitalize()}", Jar
@@ -66,18 +67,21 @@ android.libraryVariants.all { variant ->
         options {
             links "http://docs.oracle.com/javase/7/docs/api/"
             linksOffline "https://developer.android.com/reference","${android.sdkDirectory}/docs/reference"
+            encoding = 'UTF-8'
         }
         exclude '**/BuildConfig.java'
         exclude '**/R.java'
+        doLast {
+            copy {
+                from "src/main/javadoc"
+                into "$buildDir/docs/javadoc"
+            }
+        }
     }
 }
 
-publish {
-    repoName = 'exoplayer'
-    userOrg = 'google'
-    groupId = 'com.google.android.exoplayer'
-    artifactId = 'exoplayer'
-    version = 'r1.5.7'
-    description = 'The ExoPlayer library.'
-    website = 'https://github.com/google/ExoPlayer'
+ext {
+    releaseArtifact = 'exoplayer'
+    releaseDescription = 'The ExoPlayer library.'
 }
+apply from: '../publish.gradle'

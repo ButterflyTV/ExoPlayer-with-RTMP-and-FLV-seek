@@ -2,11 +2,11 @@
 
 ## Description ##
 
-The VP9 Extension is a [TrackRenderer][] implementation that helps you bundle
-libvpx (the VP9 decoding library) into your app and use it along with ExoPlayer
-to play VP9 video on Android devices.
+The VP9 Extension is a [Renderer][] implementation that helps you bundle libvpx
+(the VP9 decoding library) into your app and use it along with ExoPlayer to play
+VP9 video on Android devices.
 
-[TrackRenderer]: https://google.github.io/ExoPlayer/doc/reference/com/google/android/exoplayer/TrackRenderer.html
+[Renderer]: https://google.github.io/ExoPlayer/doc/reference/com/google/android/exoplayer2/Renderer.html
 
 ## Build Instructions ##
 
@@ -26,6 +26,8 @@ VP9_EXT_PATH="${EXOPLAYER_ROOT}/extensions/vp9/src/main"
 
 * Download the [Android NDK][] and set its location in an environment variable:
 
+[Android NDK]: https://developer.android.com/tools/sdk/ndk/index.html
+
 ```
 NDK_PATH="<path to Android NDK>"
 ```
@@ -36,6 +38,18 @@ NDK_PATH="<path to Android NDK>"
 cd "${VP9_EXT_PATH}/jni" && \
 git clone https://chromium.googlesource.com/webm/libvpx libvpx && \
 git clone https://chromium.googlesource.com/libyuv/libyuv libyuv
+```
+
+* Checkout the appropriate branches of libvpx and libyuv (the scripts and
+  makefiles bundled in this repo are known to work only at these versions of the
+  libraries - we will update this periodically as newer versions of
+  libvpx/libyuv are released):
+
+```
+cd "${VP9_EXT_PATH}/jni/libvpx" && \
+git checkout tags/v1.6.1 -b v1.6.1 && \
+cd "${VP9_EXT_PATH}/jni/libyuv" && \
+git checkout e2611a73
 ```
 
 * Run a script that generates necessary configuration files for libvpx:
@@ -77,5 +91,7 @@ dependencies {
     `generate_libvpx_android_configs.sh`
   * Clean and re-build the project.
 * If you want to use your own version of libvpx or libyuv, place it in
-  `${VP9_EXT_PATH}/jni/libvpx` or `${VP9_EXT_PATH}/jni/libyuv` respectively.
+  `${VP9_EXT_PATH}/jni/libvpx` or `${VP9_EXT_PATH}/jni/libyuv` respectively. But
+  please note that `generate_libvpx_android_configs.sh` and the makefiles need
+  to be modified to work with arbitrary versions of libvpx and libyuv.
 

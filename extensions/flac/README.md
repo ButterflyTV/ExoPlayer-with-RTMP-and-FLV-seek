@@ -2,11 +2,11 @@
 
 ## Description ##
 
-The Flac Extension is a [TrackRenderer][] implementation that helps you bundle
+The Flac Extension is a [Renderer][] implementation that helps you bundle
 libFLAC (the Flac decoding library) into your app and use it along with
 ExoPlayer to play Flac audio on Android devices.
 
-[TrackRenderer]: https://google.github.io/ExoPlayer/doc/reference/com/google/android/exoplayer/TrackRenderer.html
+[Renderer]: https://google.github.io/ExoPlayer/doc/reference/com/google/android/exoplayer2/Renderer.html
 
 ## Build Instructions ##
 
@@ -35,6 +35,7 @@ NDK_PATH="<path to Android NDK>"
 * Download and extract flac-1.3.1 as "${FLAC_EXT_PATH}/jni/flac" folder:
 
 ```
+cd "${FLAC_EXT_PATH}/jni" && \
 curl http://downloads.xiph.org/releases/flac/flac-1.3.1.tar.xz | tar xJ && \
 mv flac-1.3.1 flac
 ```

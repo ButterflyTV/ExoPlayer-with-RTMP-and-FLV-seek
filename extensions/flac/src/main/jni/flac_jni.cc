@@ -15,36 +15,33 @@
  */
 
 #include <jni.h>
-
 #include <android/log.h>
-
 #include <cstdlib>
-
 #include "include/flac_parser.h"
 
-#define LOG_TAG "FlacJniJNI"
+#define LOG_TAG "flac_jni"
 #define ALOGE(...) \
   ((void)__android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__))
 #define ALOGV(...) \
   ((void)__android_log_print(ANDROID_LOG_VERBOSE, LOG_TAG, __VA_ARGS__))
 
-#define FUNC(RETURN_TYPE, NAME, ...)                                       \
+#define DECODER_FUNC(RETURN_TYPE, NAME, ...)                               \
   extern "C" {                                                             \
   JNIEXPORT RETURN_TYPE                                                    \
-      Java_com_google_android_exoplayer_ext_flac_FlacJni_##NAME( \
+      Java_com_google_android_exoplayer2_ext_flac_FlacDecoderJni_##NAME( \
           JNIEnv *env, jobject thiz, ##__VA_ARGS__);                       \
   }                                                                        \
   JNIEXPORT RETURN_TYPE                                                    \
-      Java_com_google_android_exoplayer_ext_flac_FlacJni_##NAME( \
+      Java_com_google_android_exoplayer2_ext_flac_FlacDecoderJni_##NAME( \
           JNIEnv *env, jobject thiz, ##__VA_ARGS__)
 
 class JavaDataSource : public DataSource {
  public:
-  void setFlacJni(JNIEnv *env, jobject flacJni) {
+  void setFlacDecoderJni(JNIEnv *env, jobject flacDecoderJni) {
     this->env = env;
-    this->flacJni = flacJni;
+    this->flacDecoderJni = flacDecoderJni;
     if (mid == NULL) {
-      jclass cls = env->GetObjectClass(flacJni);
+      jclass cls = env->GetObjectClass(flacDecoderJni);
       mid = env->GetMethodID(cls, "read", "(Ljava/nio/ByteBuffer;)I");
       env->DeleteLocalRef(cls);
     }
@@ -52,7 +49,7 @@ class JavaDataSource : public DataSource {
 
   ssize_t readAt(off64_t offset, void *const data, size_t size) {
     jobject byteBuffer = env->NewDirectByteBuffer(data, size);
-    int result = env->CallIntMethod(flacJni, mid, byteBuffer);
+    int result = env->CallIntMethod(flacDecoderJni, mid, byteBuffer);
     if (env->ExceptionOccurred()) {
       result = -1;
     }
@@ -62,26 +59,38 @@ class JavaDataSource : public DataSource {
 
  private:
   JNIEnv *env;
-  jobject flacJni;
+  jobject flacDecoderJni;
   jmethodID mid;
 };
 
 struct Context {
   JavaDataSource *source;
   FLACParser *parser;
+
+  Context() {
+    source = new JavaDataSource();
+    parser = new FLACParser(source);
+  }
+
+  ~Context() {
+    delete parser;
+    delete source;
+  }
 };
 
-FUNC(jlong, flacInit) {
+DECODER_FUNC(jlong, flacInit) {
   Context *context = new Context;
-  context->source = new JavaDataSource();
-  context->parser = new FLACParser(context->source);
+  if (!context->parser->init()) {
+    delete context;
+    return 0;
+  }
   return reinterpret_cast<intptr_t>(context);
 }
 
-FUNC(jobject, flacDecodeMetadata, jlong jContext) {
+DECODER_FUNC(jobject, flacDecodeMetadata, jlong jContext) {
   Context *context = reinterpret_cast<Context *>(jContext);
-  context->source->setFlacJni(env, thiz);
-  if (!context->parser->init()) {
+  context->source->setFlacDecoderJni(env, thiz);
+  if (!context->parser->decodeMetadata()) {
     return NULL;
   }
 
@@ -89,7 +98,7 @@ FUNC(jobject, flacDecodeMetadata, jlong jContext) {
       context->parser->getStreamInfo();
 
   jclass cls = env->FindClass(
-      "com/google/android/exoplayer/ext/flac/"
+      "com/google/android/exoplayer2/util/"
       "FlacStreamInfo");
   jmethodID constructor = env->GetMethodID(cls, "<init>", "(IIIIIIIJ)V");
 
@@ -100,17 +109,17 @@ FUNC(jobject, flacDecodeMetadata, jlong jContext) {
                         streamInfo.total_samples);
 }
 
-FUNC(jint, flacDecodeToBuffer, jlong jContext, jobject jOutputBuffer) {
+DECODER_FUNC(jint, flacDecodeToBuffer, jlong jContext, jobject jOutputBuffer) {
   Context *context = reinterpret_cast<Context *>(jContext);
-  context->source->setFlacJni(env, thiz);
+  context->source->setFlacDecoderJni(env, thiz);
   void *outputBuffer = env->GetDirectBufferAddress(jOutputBuffer);
   jint outputSize = env->GetDirectBufferCapacity(jOutputBuffer);
   return context->parser->readBuffer(outputBuffer, outputSize);
 }
 
-FUNC(jint, flacDecodeToArray, jlong jContext, jbyteArray jOutputArray) {
+DECODER_FUNC(jint, flacDecodeToArray, jlong jContext, jbyteArray jOutputArray) {
   Context *context = reinterpret_cast<Context *>(jContext);
-  context->source->setFlacJni(env, thiz);
+  context->source->setFlacDecoderJni(env, thiz);
   jbyte *outputBuffer = env->GetByteArrayElements(jOutputArray, NULL);
   jint outputSize = env->GetArrayLength(jOutputArray);
   int count = context->parser->readBuffer(outputBuffer, outputSize);
@@ -118,24 +127,38 @@ FUNC(jint, flacDecodeToArray, jlong jContext, jbyteArray jOutputArray) {
   return count;
 }
 
-FUNC(jlong, flacGetLastTimestamp, jlong jContext) {
+DECODER_FUNC(jlong, flacGetDecodePosition, jlong jContext) {
+  Context *context = reinterpret_cast<Context *>(jContext);
+  return context->parser->getDecodePosition();
+}
+
+DECODER_FUNC(jlong, flacGetLastTimestamp, jlong jContext) {
   Context *context = reinterpret_cast<Context *>(jContext);
   return context->parser->getLastTimestamp();
 }
 
-FUNC(jlong, flacGetSeekPosition, jlong jContext, jlong timeUs) {
+DECODER_FUNC(jlong, flacGetSeekPosition, jlong jContext, jlong timeUs) {
   Context *context = reinterpret_cast<Context *>(jContext);
   return context->parser->getSeekPosition(timeUs);
 }
 
-FUNC(void, flacFlush, jlong jContext) {
+DECODER_FUNC(jstring, flacGetStateString, jlong jContext) {
+  Context *context = reinterpret_cast<Context *>(jContext);
+  const char *str = context->parser->getDecoderStateString();
+  return env->NewStringUTF(str);
+}
+
+DECODER_FUNC(void, flacFlush, jlong jContext) {
   Context *context = reinterpret_cast<Context *>(jContext);
   context->parser->flush();
 }
 
-FUNC(void, flacRelease, jlong jContext) {
+DECODER_FUNC(void, flacReset, jlong jContext, jlong newPosition) {
   Context *context = reinterpret_cast<Context *>(jContext);
-  delete context->parser;
-  delete context->source;
+  context->parser->reset(newPosition);
+}
+
+DECODER_FUNC(void, flacRelease, jlong jContext) {
+  Context *context = reinterpret_cast<Context *>(jContext);
   delete context;
 }

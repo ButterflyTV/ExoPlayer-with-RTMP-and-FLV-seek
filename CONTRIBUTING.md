@@ -9,16 +9,16 @@ Before filing a new issue, please search the tracker to check if it's already
 covered by an existing report. Avoiding duplicates helps us maximize the time we
 can spend fixing bugs and adding new features.
 
-If you're filing a bug, be sure to provide enough information for us to
-efficiently diagnose and reproduce the problem.
-[Reporting an issue](https://google.github.io/ExoPlayer/2015/10/01/reporting-issues.html)
-gives some examples of what to include.
+When filing an issue, be sure to provide enough information for us to
+efficiently diagnose and reproduce the problem. In particular, please include
+all of the information requested in the issue template.
 
 ## Pull requests ##
 
 We will also consider high quality pull requests. These should normally merge
-into the [dev][] branch rather than master. To contribute in this way you must
-first submit a Contributor License Agreement, as described below.
+into the `dev-vX` branch with the highest major version number. Bug fixes may
+be suitable for merging into older `dev-vX` branches. Before a pull request can
+be accepted you must submit a Contributor License Agreement, as described below.
 
 [dev]: https://github.com/google/ExoPlayer/tree/dev
 

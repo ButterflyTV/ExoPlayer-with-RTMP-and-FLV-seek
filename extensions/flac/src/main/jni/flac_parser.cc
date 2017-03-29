@@ -267,6 +267,8 @@ FLACParser::FLACParser(DataSource *source)
     : mDataSource(source),
       mCopy(copyTrespass),
       mDecoder(NULL),
+      mSeekTable(NULL),
+      firstFrameOffset(0LL),
       mCurrentPos(0LL),
       mEOF(false),
       mStreamInfoValid(false),
@@ -314,9 +316,13 @@ bool FLACParser::init() {
     ALOGE("init_stream failed %d", initStatus);
     return false;
   }
+  return true;
+}
+
+bool FLACParser::decodeMetadata() {
   // parse all metadata
   if (!FLAC__stream_decoder_process_until_end_of_metadata(mDecoder)) {
-    ALOGE("end_of_metadata failed");
+    ALOGE("metadata decoding failed");
     return false;
   }
   // store first frame offset
@@ -387,14 +393,14 @@ size_t FLACParser::readBuffer(void *output, size_t output_size) {
 
   if (!FLAC__stream_decoder_process_single(mDecoder)) {
     ALOGE("FLACParser::readBuffer process_single failed. Status: %s",
-            FLAC__stream_decoder_get_resolved_state_string(mDecoder));
+          getDecoderStateString());
     return -1;
   }
   if (!mWriteCompleted) {
     if (FLAC__stream_decoder_get_state(mDecoder) !=
         FLAC__STREAM_DECODER_END_OF_STREAM) {
       ALOGE("FLACParser::readBuffer write did not complete. Status: %s",
-            FLAC__stream_decoder_get_resolved_state_string(mDecoder));
+            getDecoderStateString());
     }
     return -1;
   }
@@ -447,7 +453,8 @@ int64_t FLACParser::getSeekPosition(int64_t timeUs) {
   }
 
   FLAC__StreamMetadata_SeekPoint* points = mSeekTable->points;
-  for (unsigned i = mSeekTable->num_points - 1; i >= 0; i--) {
+  for (unsigned i = mSeekTable->num_points; i > 0; ) {
+    i--;
     if (points[i].sample_number <= sample) {
       return firstFrameOffset + points[i].stream_offset;
     }
