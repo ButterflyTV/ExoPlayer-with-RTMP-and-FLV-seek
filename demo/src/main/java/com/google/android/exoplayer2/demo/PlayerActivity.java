@@ -115,6 +115,7 @@ public class PlayerActivity extends Activity implements OnClickListener, ExoPlay
   private boolean shouldAutoPlay;
   private int resumeWindow;
   private long resumePosition;
+  private RtmpDataSource.RtmpDataSourceFactory rtmpDataSourceFactory;
 
   // Activity lifecycle
 
@@ -124,6 +125,7 @@ public class PlayerActivity extends Activity implements OnClickListener, ExoPlay
     shouldAutoPlay = true;
     clearResumePosition();
     mediaDataSourceFactory = buildDataSourceFactory(true);
+    rtmpDataSourceFactory = new RtmpDataSource.RtmpDataSourceFactory();
     mainHandler = new Handler();
     if (CookieHandler.getDefault() != DEFAULT_COOKIE_MANAGER) {
       CookieHandler.setDefault(DEFAULT_COOKIE_MANAGER);
@@ -328,8 +330,14 @@ public class PlayerActivity extends Activity implements OnClickListener, ExoPlay
       case C.TYPE_HLS:
         return new HlsMediaSource(uri, mediaDataSourceFactory, mainHandler, eventLogger);
       case C.TYPE_OTHER:
-        return new ExtractorMediaSource(uri, mediaDataSourceFactory, new DefaultExtractorsFactory(),
-            mainHandler, eventLogger);
+        if (uri.getScheme().equals("rtmp")) {
+          return new ExtractorMediaSource(uri, rtmpDataSourceFactory, new DefaultExtractorsFactory(),
+                  mainHandler, eventLogger);
+        }
+        else {
+          return new ExtractorMediaSource(uri, mediaDataSourceFactory, new DefaultExtractorsFactory(),
+                  mainHandler, eventLogger);
+        }
       default: {
         throw new IllegalStateException("Unsupported type: " + type);
       }
