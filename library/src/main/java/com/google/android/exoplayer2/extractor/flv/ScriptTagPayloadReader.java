@@ -81,7 +81,9 @@ import java.util.Map;
     int type = readAmfType(data);
     if (type != AMF_TYPE_ECMA_ARRAY) {
       // Should never happen.
-      throw new ParserException();
+      //Do not throw exception because some servers may send different types in here.
+      //throw new ParserException();
+      return;
     }
     // Set the duration to the value contained in the metadata, if present.
     Map<String, Object> metadata = readAmfEcmaArray(data);
