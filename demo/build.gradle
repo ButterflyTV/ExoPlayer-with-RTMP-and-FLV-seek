@@ -46,7 +46,7 @@ android {
 
 dependencies {
     compile project(':library')
-    compile 'net.butterflytv.utils:rtmp-client:0.2.6'
+    compile 'net.butterflytv.utils:rtmp-client:0.2.8'
     withExtensionsCompile project(path: ':extension-ffmpeg')
     withExtensionsCompile project(path: ':extension-flac')
     withExtensionsCompile project(path: ':extension-opus')

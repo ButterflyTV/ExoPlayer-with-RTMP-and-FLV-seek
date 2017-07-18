@@ -38,9 +38,13 @@ public class RtmpDataSource implements DataSource {
 
     @Override
     public long open(DataSpec dataSpec) throws IOException {
-        uri = dataSpec.uri;
-        int result = rtmpClient.open(dataSpec.uri.toString(), false);
-        if (result < 0) {
+        String uriString = dataSpec.uri.toString();
+        try {
+            rtmpClient.open(uriString, false);
+            uri = dataSpec.uri;
+        }
+        catch (Exception e) {
+            e.printStackTrace();
             return 0;
         }
         return C.LENGTH_UNSET;
