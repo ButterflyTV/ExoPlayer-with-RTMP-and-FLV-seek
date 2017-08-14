@@ -1,6 +1,7 @@
 package com.google.android.exoplayer2.demo;
 
 import android.net.Uri;
+import android.util.Log;
 
 import com.google.android.exoplayer2.C;
 import com.google.android.exoplayer2.upstream.DataSource;
@@ -14,6 +15,8 @@ import java.io.IOException;
  * Created by faraklit on 08.01.2016.
  */
 public class RtmpDataSource implements DataSource {
+
+    private static String TAG = "RtmpSouce";
 
     public static class RtmpDataSourceFactory implements DataSource.Factory {
 
@@ -38,12 +41,17 @@ public class RtmpDataSource implements DataSource {
 
     @Override
     public long open(DataSpec dataSpec) throws IOException {
+        Log.w(TAG, "open is called");
         String uriString = dataSpec.uri.toString();
         try {
             rtmpClient.open(uriString, false);
             uri = dataSpec.uri;
         }
         catch (Exception e) {
+            if (e instanceof RtmpClient.RtmpIOException) {
+                RtmpClient.RtmpIOException rtmpIOException = (RtmpClient.RtmpIOException) e;
+                Log.e(TAG, "error code is:" + rtmpIOException.errorCode);
+            }
             e.printStackTrace();
             return 0;
         }
@@ -52,6 +60,7 @@ public class RtmpDataSource implements DataSource {
 
     @Override
     public void close() throws IOException {
+        Log.w(TAG, "close is called");
         rtmpClient.close();
     }
 
