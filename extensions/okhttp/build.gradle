@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+apply from: '../../constants.gradle'
 apply plugin: 'com.android.library'
 
 android {
@@ -29,11 +30,16 @@ android {
 }
 
 dependencies {
-    compile project(':library')
-    compile('com.squareup.okhttp3:okhttp:3.6.0') {
+    compile project(modulePrefix + 'library-core')
+    compile('com.squareup.okhttp3:okhttp:3.9.0') {
         exclude group: 'org.json'
     }
 }
+
+ext {
+    javadocTitle = 'OkHttp extension'
+}
+apply from: '../../javadoc_library.gradle'
 
 ext {
     releaseArtifact = 'extension-okhttp'

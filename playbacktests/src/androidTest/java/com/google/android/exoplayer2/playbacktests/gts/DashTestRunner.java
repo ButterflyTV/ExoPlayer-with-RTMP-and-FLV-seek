@@ -25,8 +25,8 @@ import android.net.Uri;
 import android.util.Log;
 import android.view.Surface;
 import com.google.android.exoplayer2.C;
-import com.google.android.exoplayer2.DefaultLoadControl;
 import com.google.android.exoplayer2.ExoPlaybackException;
+import com.google.android.exoplayer2.ExoPlayerFactory;
 import com.google.android.exoplayer2.Format;
 import com.google.android.exoplayer2.RendererCapabilities;
 import com.google.android.exoplayer2.SimpleExoPlayer;
@@ -38,18 +38,18 @@ import com.google.android.exoplayer2.drm.HttpMediaDrmCallback;
 import com.google.android.exoplayer2.drm.MediaDrmCallback;
 import com.google.android.exoplayer2.drm.UnsupportedDrmException;
 import com.google.android.exoplayer2.mediacodec.MediaCodecUtil;
-import com.google.android.exoplayer2.playbacktests.util.ActionSchedule;
-import com.google.android.exoplayer2.playbacktests.util.DebugSimpleExoPlayer;
-import com.google.android.exoplayer2.playbacktests.util.DecoderCountersUtil;
-import com.google.android.exoplayer2.playbacktests.util.ExoHostedTest;
-import com.google.android.exoplayer2.playbacktests.util.HostActivity;
-import com.google.android.exoplayer2.playbacktests.util.HostActivity.HostedTest;
-import com.google.android.exoplayer2.playbacktests.util.MetricsLogger;
 import com.google.android.exoplayer2.source.MediaSource;
 import com.google.android.exoplayer2.source.TrackGroup;
 import com.google.android.exoplayer2.source.TrackGroupArray;
 import com.google.android.exoplayer2.source.dash.DashMediaSource;
 import com.google.android.exoplayer2.source.dash.DefaultDashChunkSource;
+import com.google.android.exoplayer2.testutil.ActionSchedule;
+import com.google.android.exoplayer2.testutil.DebugRenderersFactory;
+import com.google.android.exoplayer2.testutil.DecoderCountersUtil;
+import com.google.android.exoplayer2.testutil.ExoHostedTest;
+import com.google.android.exoplayer2.testutil.HostActivity;
+import com.google.android.exoplayer2.testutil.HostActivity.HostedTest;
+import com.google.android.exoplayer2.testutil.MetricsLogger;
 import com.google.android.exoplayer2.trackselection.FixedTrackSelection;
 import com.google.android.exoplayer2.trackselection.MappingTrackSelector;
 import com.google.android.exoplayer2.trackselection.RandomTrackSelection;
@@ -108,21 +108,23 @@ public final class DashTestRunner {
   private String widevineLicenseUrl;
   private DataSource.Factory dataSourceFactory;
 
-  @TargetApi(18)
   @SuppressWarnings("ResourceType")
   public static boolean isL1WidevineAvailable(String mimeType) {
-    try {
-      // Force L3 if secure decoder is not available.
-      if (MediaCodecUtil.getDecoderInfo(mimeType, true) == null) {
-        return false;
+    if (Util.SDK_INT >= 18) {
+      try {
+        // Force L3 if secure decoder is not available.
+        if (MediaCodecUtil.getDecoderInfo(mimeType, true) == null) {
+          return false;
+        }
+        MediaDrm mediaDrm = MediaDrmBuilder.build();
+        String securityProperty = mediaDrm.getPropertyString(SECURITY_LEVEL_PROPERTY);
+        mediaDrm.release();
+        return WIDEVINE_SECURITY_LEVEL_1.equals(securityProperty);
+      } catch (MediaCodecUtil.DecoderQueryException e) {
+        throw new IllegalStateException(e);
       }
-      MediaDrm mediaDrm = new MediaDrm(WIDEVINE_UUID);
-      String securityProperty = mediaDrm.getPropertyString(SECURITY_LEVEL_PROPERTY);
-      mediaDrm.release();
-      return WIDEVINE_SECURITY_LEVEL_1.equals(securityProperty);
-    } catch (MediaCodecUtil.DecoderQueryException | UnsupportedSchemeException e) {
-      throw new IllegalStateException(e);
     }
+    return false;
   }
 
   public DashTestRunner(String tag, HostActivity activity, Instrumentation instrumentation) {
@@ -169,9 +171,10 @@ public final class DashTestRunner {
     return this;
   }
 
-  public DashTestRunner setWidevineMimeType(String mimeType) {
+  public DashTestRunner setWidevineInfo(String mimeType, boolean videoIdRequiredInLicenseUrl) {
     this.useL1Widevine = isL1WidevineAvailable(mimeType);
-    this.widevineLicenseUrl = DashTestData.getWidevineLicenseUrl(useL1Widevine);
+    this.widevineLicenseUrl = DashTestData.getWidevineLicenseUrl(videoIdRequiredInLicenseUrl,
+        useL1Widevine);
     return this;
   }
 
@@ -296,8 +299,8 @@ public final class DashTestRunner {
     protected SimpleExoPlayer buildExoPlayer(HostActivity host, Surface surface,
         MappingTrackSelector trackSelector,
         DrmSessionManager<FrameworkMediaCrypto> drmSessionManager) {
-      SimpleExoPlayer player = new DebugSimpleExoPlayer(host, trackSelector,
-          new DefaultLoadControl(), drmSessionManager);
+      SimpleExoPlayer player = ExoPlayerFactory.newSimpleInstance(
+          new DebugRenderersFactory(host, drmSessionManager), trackSelector);
       player.setVideoSurface(surface);
       return player;
     }
@@ -322,9 +325,9 @@ public final class DashTestRunner {
       metricsLogger.logMetric(MetricsLogger.KEY_TEST_NAME, streamName);
       metricsLogger.logMetric(MetricsLogger.KEY_IS_CDD_LIMITED_RETRY, isCddLimitedRetry);
       metricsLogger.logMetric(MetricsLogger.KEY_FRAMES_DROPPED_COUNT,
-          videoCounters.droppedOutputBufferCount);
+          videoCounters.droppedBufferCount);
       metricsLogger.logMetric(MetricsLogger.KEY_MAX_CONSECUTIVE_FRAMES_DROPPED_COUNT,
-          videoCounters.maxConsecutiveDroppedOutputBufferCount);
+          videoCounters.maxConsecutiveDroppedBufferCount);
       metricsLogger.logMetric(MetricsLogger.KEY_FRAMES_SKIPPED_COUNT,
           videoCounters.skippedOutputBufferCount);
       metricsLogger.logMetric(MetricsLogger.KEY_FRAMES_RENDERED_COUNT,
@@ -342,20 +345,20 @@ public final class DashTestRunner {
             .assertSkippedOutputBufferCount(tag + VIDEO_TAG_SUFFIX, videoCounters, 0);
         // We allow one fewer output buffer due to the way that MediaCodecRenderer and the
         // underlying decoders handle the end of stream. This should be tightened up in the future.
-        DecoderCountersUtil.assertTotalOutputBufferCount(tag + AUDIO_TAG_SUFFIX, audioCounters,
+        DecoderCountersUtil.assertTotalBufferCount(tag + AUDIO_TAG_SUFFIX, audioCounters,
             audioCounters.inputBufferCount - 1, audioCounters.inputBufferCount);
-        DecoderCountersUtil.assertTotalOutputBufferCount(tag + VIDEO_TAG_SUFFIX, videoCounters,
+        DecoderCountersUtil.assertTotalBufferCount(tag + VIDEO_TAG_SUFFIX, videoCounters,
             videoCounters.inputBufferCount - 1, videoCounters.inputBufferCount);
       }
       try {
         int droppedFrameLimit = (int) Math.ceil(MAX_DROPPED_VIDEO_FRAME_FRACTION
-            * DecoderCountersUtil.getTotalOutputBuffers(videoCounters));
+            * DecoderCountersUtil.getTotalBufferCount(videoCounters));
         // Assert that performance is acceptable.
         // Assert that total dropped frames were within limit.
-        DecoderCountersUtil.assertDroppedOutputBufferLimit(tag + VIDEO_TAG_SUFFIX, videoCounters,
+        DecoderCountersUtil.assertDroppedBufferLimit(tag + VIDEO_TAG_SUFFIX, videoCounters,
             droppedFrameLimit);
         // Assert that consecutive dropped frames were within limit.
-        DecoderCountersUtil.assertConsecutiveDroppedOutputBufferLimit(tag + VIDEO_TAG_SUFFIX,
+        DecoderCountersUtil.assertConsecutiveDroppedBufferLimit(tag + VIDEO_TAG_SUFFIX,
             videoCounters, MAX_CONSECUTIVE_DROPPED_VIDEO_FRAMES);
       } catch (AssertionFailedError e) {
         if (trackSelector.includedAdditionalVideoFormats) {
@@ -452,6 +455,23 @@ public final class DashTestRunner {
     private static boolean isFormatHandled(int formatSupport) {
       return (formatSupport & RendererCapabilities.FORMAT_SUPPORT_MASK)
           == RendererCapabilities.FORMAT_HANDLED;
+    }
+
+  }
+
+  /**
+   * Creates a new {@code MediaDrm} object. The encapsulation ensures that the tests can be
+   * executed for API level < 18.
+   */
+  @TargetApi(18)
+  private static final class MediaDrmBuilder {
+
+    public static MediaDrm build () {
+      try {
+        return new MediaDrm(WIDEVINE_UUID);
+      } catch (UnsupportedSchemeException e) {
+        throw new IllegalStateException(e);
+      }
     }
 
   }

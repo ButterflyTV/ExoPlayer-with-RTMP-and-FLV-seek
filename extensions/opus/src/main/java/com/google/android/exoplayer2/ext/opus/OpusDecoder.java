@@ -161,7 +161,7 @@ import java.util.List;
             cryptoInfo.key, cryptoInfo.iv, cryptoInfo.numSubSamples,
             cryptoInfo.numBytesOfClearData, cryptoInfo.numBytesOfEncryptedData)
         : opusDecode(nativeDecoderContext, inputBuffer.timeUs, inputData, inputData.limit(),
-            outputBuffer, SAMPLE_RATE);
+            outputBuffer);
     if (result < 0) {
       if (result == DRM_ERROR) {
         String message = "Drm error: " + opusGetErrorMessage(nativeDecoderContext);
@@ -197,6 +197,20 @@ import java.util.List;
     opusClose(nativeDecoderContext);
   }
 
+  /**
+   * Returns the channel count of output audio.
+   */
+  public int getChannelCount() {
+    return channelCount;
+  }
+
+  /**
+   * Returns the sample rate of output audio.
+   */
+  public int getSampleRate() {
+    return SAMPLE_RATE;
+  }
+
   private static int nsToSamples(long ns) {
     return (int) (ns * SAMPLE_RATE / 1000000000);
   }
@@ -210,7 +224,7 @@ import java.util.List;
   private native long opusInit(int sampleRate, int channelCount, int numStreams, int numCoupled,
       int gain, byte[] streamMap);
   private native int opusDecode(long decoder, long timeUs, ByteBuffer inputBuffer, int inputSize,
-      SimpleOutputBuffer outputBuffer, int sampleRate);
+      SimpleOutputBuffer outputBuffer);
   private native int opusSecureDecode(long decoder, long timeUs, ByteBuffer inputBuffer,
       int inputSize, SimpleOutputBuffer outputBuffer, int sampleRate,
       ExoMediaCrypto mediaCrypto, int inputMode, byte[] key, byte[] iv,

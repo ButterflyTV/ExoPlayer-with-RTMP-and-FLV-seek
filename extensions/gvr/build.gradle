@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+apply from: '../../constants.gradle'
 apply plugin: 'com.android.library'
 
 android {
@@ -24,9 +25,14 @@ android {
 }
 
 dependencies {
-    compile project(':library')
-    compile 'com.google.vr:sdk-audio:1.30.0'
+    compile project(modulePrefix + 'library-core')
+    compile 'com.google.vr:sdk-audio:1.80.0'
 }
+
+ext {
+    javadocTitle = 'GVR extension'
+}
+apply from: '../../javadoc_library.gradle'
 
 ext {
     releaseArtifact = 'extension-gvr'
