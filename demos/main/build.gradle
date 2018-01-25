@@ -63,4 +63,6 @@ dependencies {
     withExtensionsCompile project(path: modulePrefix + 'extension-opus')
     withExtensionsCompile project(path: modulePrefix + 'extension-vp9')
     withExtensionsCompile project(path: modulePrefix + 'extension-rtmp')
+
+    compile project(path: ':exoplayer-extension-rtmp')
 }
