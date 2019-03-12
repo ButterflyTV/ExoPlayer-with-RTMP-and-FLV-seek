@@ -46,6 +46,7 @@ import com.google.android.exoplayer2.drm.FrameworkMediaCrypto;
 import com.google.android.exoplayer2.drm.FrameworkMediaDrm;
 import com.google.android.exoplayer2.drm.HttpMediaDrmCallback;
 import com.google.android.exoplayer2.drm.UnsupportedDrmException;
+import com.google.android.exoplayer2.ext.rtmp.RtmpDataSourceFactory;
 import com.google.android.exoplayer2.extractor.DefaultExtractorsFactory;
 import com.google.android.exoplayer2.mediacodec.MediaCodecRenderer.DecoderInitializationException;
 import com.google.android.exoplayer2.mediacodec.MediaCodecUtil.DecoderQueryException;
@@ -124,7 +125,7 @@ public class PlayerActivity extends Activity implements OnClickListener,
   private boolean shouldAutoPlay;
   private int resumeWindow;
   private long resumePosition;
-  private RtmpDataSource.RtmpDataSourceFactory rtmpDataSourceFactory;
+  private RtmpDataSourceFactory rtmpDataSourceFactory;
 
   // Fields used only for ad playback. The ads loader is loaded via reflection.
 
@@ -140,7 +141,7 @@ public class PlayerActivity extends Activity implements OnClickListener,
     shouldAutoPlay = true;
     clearResumePosition();
     mediaDataSourceFactory = buildDataSourceFactory(true);
-    rtmpDataSourceFactory = new RtmpDataSource.RtmpDataSourceFactory();
+    rtmpDataSourceFactory = new RtmpDataSourceFactory();
     mainHandler = new Handler();
     if (CookieHandler.getDefault() != DEFAULT_COOKIE_MANAGER) {
       CookieHandler.setDefault(DEFAULT_COOKIE_MANAGER);
